@@ -1,0 +1,267 @@
+div, span { 
+	/* Sorgt dafür, dass der angezeigte Text nicht markiert wird (z.B. buttons) */
+	user-select: none;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+}
+
+div#counter {
+	position: fixed;
+	top: 10px;
+	right: 10px;
+	padding: 5px;
+	color: black;
+	background-color: #7777c3;
+	border-radius:5px;
+}
+
+div#header {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    /* height: 30px; */
+    background-color: lightgray;
+    padding-top: 15px;
+    padding-bottom: 15px;
+	z-index:1;
+}
+
+div#start {
+    width: auto;
+	padding-left: calc((100% - 725px) / 2); /* Zentriere den Header */
+}
+div#started {
+    width: auto;
+	padding-left: calc((100% - 580px) / 2); /* Zentriere den Header */
+}
+
+div#random {
+    float: left;
+    margin-left: 20px;
+    border: 1px solid black;
+    padding: 5px;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    border-radius: 5px;
+}
+
+div#render {
+    float: left;
+    margin-left: 20px;
+    border: 1px solid darkgreen;
+    padding: 5px;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    border-radius: 5px;
+}
+div#clear {
+    float: left;
+    margin-left: 20px;
+    border: 1px solid darkred;
+    padding: 5px;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    border-radius: 5px;
+}
+
+div#header input[type="number"] {
+    width: 30px;
+    float: left;
+	margin-top: 5px !important;
+}
+
+div#header span.label {
+    float: left;
+}
+
+div#header div * {
+    margin: 5px;
+}
+div#started {
+	display:none;
+}
+
+table {
+	border:1px solid black;
+	border-collapse:collapse;
+}
+table td {
+	width: 40px;
+	height: 40px;
+	border: 1px solid black;
+}
+div#body {
+    height: calc(100% - 61.33px);
+    width:  100%;
+    position: fixed;
+    top: 61.33px;
+    left: 0px;
+}
+
+div#container {
+    width: calc( 100% - 20px);
+    height: calc(100% - 20px);
+    margin-top: 10px;
+    margin-left: 10px;
+	z-index: -1;
+}
+div#render:hover {
+    border-color: transparent;
+    background-color: darkgreen;
+    color: white;
+}
+div#clear:hover {
+    border-color: transparent;
+    background-color: darkred;
+    color: white;
+}
+
+div#random:hover {
+    border-color: transparent;
+    color: white;
+    background-color: black;
+}
+div#next:hover {
+    border-color: transparent;
+    color: white;
+    background-color: darkgreen;
+}
+div#stop:hover {
+    border-color: transparent;
+    color: white;
+    background-color: darkred;
+}
+div#antiworld:hover {
+    border-color: transparent;
+    color: white;
+    background-color: orange;
+}
+td.alive {
+	background-color: lightgreen;
+}
+div#popup_back {
+	display:none;
+	position:fixed;
+	top:50px;
+	padding: 20px 40px;
+	border-radius:5px;
+	background-color:rgba(44,170,128,0.9);
+	z-index: 5;
+}
+div#next {
+	float: left;
+	border: 1px solid darkgreen;
+	border-radius: 5px;
+	padding: 5px;
+	margin: 0px 5px !important;
+}
+div#stop {
+	float: left;
+	padding: 5px;
+	margin: 0px 5px !important;
+	border: 1px solid darkred;
+	border-radius: 5px;
+}
+div#antiworld {
+	float: left;
+	padding: 5px;
+	margin: 0px 5px !important;
+	border: 1px solid orange;
+	border-radius: 5px;
+}
+div#context_back {
+	width:100%;
+	height:100%;
+	z-index:10;
+	position:fixed;
+	top:0px;
+	left:0px;
+	background-color:rgba(0,0,0,0.1);
+	display:none;
+}
+div#context {
+	z-index:11;
+	position:fixed;
+	top:0px;
+	left:0px;
+	background-color:rgb(32, 160, 202);
+	display:none;
+	border-radius:5px;
+}
+div#import {
+	border-top: none !important;
+}
+div#context div {
+	padding: 5px 15px;
+	border-top: 2px solid #424242;
+}
+div#export {
+	border-top: 2px solid #424242 !important;
+}
+div#import_world {
+	position: fixed;
+	top: 230px;
+	left: 400px;
+	border-radius: 5px;
+	background-color: rgb(32, 160, 202);
+	padding: 10px 20px;
+	z-index: 12;
+	display:none;
+}
+div#import_world textarea {
+	width: 100%;
+	height: 100px;
+	margin: 10px 0px;
+	padding: 0px;
+	max-width: 600px;
+	max-height: 250px;
+	min-width: 100%;
+	min-height: 100px;
+}
+div#submit_world {
+	float: right;
+	border-radius: 5px;
+	background-color: #339989;
+	padding: 5px 10px;
+	border: 2px solid transparent;
+}
+div#submit_world:hover {
+	background-color: transparent;
+	border: 2px solid #339989;
+}
+div#auto {
+	float: left;
+	padding: 5px;
+	margin: 0px 5px !important;
+	border: 1px solid #5c33cb;
+	border-radius: 5px;
+}
+div#auto:hover {
+	border: 1px solid transparent;
+	background-color: #5c33cb;
+	color:white;
+}
+div#auto.active {
+	border: 1px solid transparent;
+	background-color: #5c33cb;
+	color:white;
+}
+div#auto.active:hover {
+	border: 1px solid #5c33cb !important;
+	background-color: transparent !important;
+	color:black !important;
+}
+#vel {
+	width: 20px;
+}
+input[type=number] { 
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    margin: 0;
+	-webkit-appearance: none !important;
+    margin: 0 !important;
+    -moz-appearance:textfield !important;
+}

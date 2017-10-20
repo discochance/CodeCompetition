@@ -1,0 +1,84 @@
+<title>CONVAY'S GAME OF LIFE</title>
+<meta charset="UTF-8"/>
+<h1>CONVAY'S GAME OF LIFE</h1>
+<h2>Benutzung</h2>
+<h3>Öffnen der Simulation</h3>
+<p>Um die Simulation zu öffnen, müssen Sie einen Browser installiert haben, z.B. Firefox oder Chrome.<br>
+Aus Leistungsgründen empfehle ich Firefox 55+, aber jeder andere Browser mir Javascript unterstützung sollte ebenfalls funktionieren.<br>
+Öffnen Sie die im Quellverzeichnis, welches Sie durch entpacken der zip-Datei erhalten, erhaltene <code>index.html</code> Datei.<br>
+Ihr PC sollte dabei automatisch einen Browser verwenden, falls nicht, wählen Sie selbst einen.</p>
+<h3>Erstellung eines Spielfeldes</h3>
+<p>Vor dem Starten des Algorithmus, muss ein Spielfeld festgelegt werden. Mit den Eingabefeldern für die Anzahl der Zeilen und Spalten in dem Header<br>
+lässt sich die größe des Spielfeldes regeln, wobei änderungen direkt übernommen werden.<br><br>
+Das Eingabefeld für die Zellenbreite legt fest, wie groß die Zellen dargestellt werden.</p>
+<h3>Vorbereitungen für den Start</h3>
+<p>Bevor der Algorithmus gestartet werden kann, muss ein Anfangsbestand gegeben sein, da ein komplett tote Welt nicht wiederbelebt wird.<br>
+Dafür stehen Ihnen 2 Möglichkeiten zur Verfügung:
+	<ol>
+		<li>Die Schaltfläche zum zufälligen wählen des Status jeder Zelle, wobei die Chancen 50/50 stehen, dass die Zelle lebt</li>
+		<li>Das manuelle Wählen von lebenden Zellen. Hierbei tippen Sie auf die Zelle die ihren Status ändern soll</li>
+	</ol>
+Lebende Zellen werden <span style="background-color:lightgreen;">grün</span> dargestellt.</p>
+<h3>Start des Algorithmus</h3>
+<p>Nachdem lebendige Zellen existieren, kann der Algorithmus gestartet werden. Dazu müssen Sie nur auf die "Start" Schaltfläche klicken.<br>
+Sobald Sie den Algorithmus starten, wird die erste Generation berechnet und dargestellt. Der Generationen-Counter im rechten oberen Eck zeigt dabei an,<br>
+welche Generation gerade angezeigt wird.<br>
+Über die "Nächste Generation"-Schaltfläche können Sie wieder die nächste Generation berechnen.<br><br>
+Falls Sie die Generationen automatisiert berechnen lassen wollen, klicken Sie einfach auf "Automatisch". Die Website berechnet dann automatisiert die nächsten Generationen<br>
+wobei das Textfeld mit der Beschriftung "Gen. pro Sek." angibt, wie viele Generationen pro Sekunde berechnet werden sollen.<br>
+<div style="color:red; border: 1px solid red;">ACHTUNG! Diese Angabe ist nur der vom Script vorgesehene Wert! Durch unterschiedliche Leistungsstärken von PC's kann es durchaus vorkommen,<br>
+dass nicht mehr als 2 bis 3 Generationen pro Sekunde berechnet werden können!</div><br>
+Alle Änderungen der Geschwindigkeit werden sofort umgesetzt.<br>
+Zum stoppen der automatisierten Berechnung wieder einfach die Schaltfläche anklicken. <br><br>
+Soll der Aktuelle Bestand verändert werden, können Sie einfach auf "neu beginnen" klicken</p>
+<h3>Zusatzfunktionen</h3>
+<h4>Antiwelt erstellen</h4>
+<p>Durch einen klick auf die Schaltfläche "Antiwelt erstellen" sterben alle lebenden Zellen und alle toten Zellen werden wiederbelebt.<br>
+Es wird also genau die Gegenwelt erschaffen.</p> 
+<h4>Welten importieren/exportieren</h4>
+<p>Durch einen rechtsklick irgendwo auf der Seite öffnet sich das Kontextmenü. In diesem können Sie über die Schaltfläche "Welt exportieren"<br>
+Die gesamte Welt exportieren. Dafür öffnet sich ein neuer Tab dessen Textinhalt Sie kopieren und speichern müssen, z.B. unter dem Namen "Meine_Welt.wrld", wobei die Dateiendung irrelevant ist,<br>
+der Einfachheit halber kann man die Datei auch als Textdatei speichern.<br><br>
+Über die Schaltfläche "Welt importieren" können Sie eine Beispiel-Welt oder eine vorher gespeicherte Welt importieren. Dazu kopieren Sie einfach den Dateiinhalt der gespeicherten Datei<br>
+in das angezeigte Textfeld und klicken auf "importieren". Dabei wird Ihre aktuelle Welt überschrieben!<br>
+Einige Beispielwelten befinden sich im Quellordner, darunter
+<ul>
+	<li>die Gosper Glider Gun, eine der ersten entdeckten "Guns"</li>
+	<li>die Gosper Glider Gun, in extra großer Welt, damit Sie sich nicht so schnell selbst zerstört</li>
+	<li>eine große leere Welt, perfekt zum beobachten komplexer, zufälliger Welten</li>
+	<li>zwei verschiedene Schwimmer, das sind Konstrukte die Sich in unendlich eine Richtung bewegen können</li>
+	<li>ein lightweight spaceship, ein spezieller Schwimmer</li>
+	<li>sowie ein Pulsar der periode 3, ein Konstrukt welches immer wieder die selben Zustände durchspielt</li>
+</ul>
+Alle Beispielwelten sind als ".wrld" Datei abgespeichert, die Sie allerdings mit jedem Texteditor öffnen können. Sollte sich Ihr Texteditor weigern,<br>
+können Sie die dateien auch einfach in ".txt" Dateien umbenennen.</p>
+<h4>Zukunftsvorhersage</h4>
+<p>Wenn Sie die geneauen Vorgänge und Hintergründe von verschiedenen Konstrukten nachvollziehen möchten, ist das Vorhersage-Tool sehr nützlich.<br>
+Sobald der Algorithmus das erste mal gestartet wurde, löst das klicken auf eine Zelle nicht mehr das umschalten zwischen lebendig und tot aus,<br>
+sondern gibt eine Meldung aus, welchen Status die Zelle im nächsten Zyklus haben wird, und wieso.<br><br>
+Eine Beispielmeldung kann dann so aussehen: <code>"Zelle bleibt leben, weil sie 2 oder 3 lebende Nachbarn(2) hat."</code><br><br>
+Dabei gibt die Zahl in Klammern den tatsächlich vorgefundenen Wert an lebenden Nachbarn an.</p>
+<h4>Verwerfen toter Welten</h4>
+<p>Erkennt der Algorithmus, dass keine lebende Zelle mehr existiert, dann wechselt er automatisch in den Start Modus, sodass der Spieler einen neue Startbestand wählen kann.</p>
+<h2>Regeln</h2>
+<p>Bei der Vorliegenden Version des Conways Game of Life handelt es sich um eine Version mit dem Regelsatz 23/3.<br>
+Dabei geben die Zahlen vor dem "/" an, wieviele lebende Nachbarn eine Zelle haben muss um am leben zu bleiben, und die Zahlen nach dem "/" wie viele lebende Nachbarn eine Zelle haben muss, um wiederbelebt zu werden.<br><br>
+Es gilt also:
+<ul>
+	<li>Eine Zelle mit weniger als 2 lebenden Nachbarn stirbt, sozusagen aus Einsamkeit</li>
+	<li>Eine Zelle mit mehr als 3 lebenden Nachbarn stirbt, sozusagen aufgrund Überbevölkerung</li>
+	<li>Eine Zelle, die tot ist, mit genau 3 lebenden Nachbarn wird wiederbelebt</li>
+	<li>Eine Zelle mit 2 oder 3 lebenden Nachbarn, die selbst auch lebt, bleibt am Leben</li>
+</ul>
+Dies ist einer der üblichsten Regelsätze von Conways Game of Life, es sind aber auch viele andere Variationen bekannt.<br>
+Für den Rand des Spielfeldes gilt in diesem Fall, dass einfach auf der gegenüberliegenden Seite weitergemacht wird, wie als wäre das Gitter auf einer Kugel.<br>
+Andere Simulationen arbeiten mit einem unendlich großen Raum, der in jede Richtung unendlich weitergeht.<br><br></p>
+<h2>Quellen und Links</h2>
+<p>Zur besseren Verständnis habe ich folgende Wikipedia-Artikel über Conways Game of Life gelesen:</p>
+<a href="https://en.wikipedia.org/wiki/Conway's_Game_of_Life">https://en.wikipedia.org/wiki/Conway's_Game_of_Life</a><br>
+<a href="https://de.wikipedia.org/wiki/Conways_Spiel_des_Lebens">https://de.wikipedia.org/wiki/Conways_Spiel_des_Lebens</a><br>
+<a href="https://de.wikipedia.org/wiki/John_Horton_Conway">https://de.wikipedia.org/wiki/John_Horton_Conway</a><br>
+<a href="https://de.wikipedia.org/wiki/Zellul%C3%A4rer_Automat">https://de.wikipedia.org/wiki/Zellul%C3%A4rer_Automat</a><br>
+<h2>Zur Simulation</h2>
+<p>Die Simulation wurde von mir, Sebastian Bach, im Rahmen der CodeCompetition von <a href="http://www.it-talents.de">it-talents.de</a> im September 2017 entworfen und entwickelt.<br>
+Die Simulation funktioniert in purem HTML, CSS, Javascript und JQuery. Zur Erstellung dieser Webapp habe ich ca 10 Arbeitsstunden benötigt, weitere 5 zur Kommentierung und etliche weitere beim beobachten vieler faszinierender Welten.<br></p>
