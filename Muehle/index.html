@@ -288,7 +288,7 @@
 		}
 		
 		
-		function possible(chip_1_temp,chip_2_temp,feld_list_temp,player, state_temp){
+		function possible(chip_1_temp,chip_2_temp,feld_list_temp,player, state_temp){ // Funktion zum ermitteln aller Möglichen Spielzüge
 			possible_chips=[]
 			possible_felder=[]
 			possible_moves=[]
@@ -322,7 +322,7 @@
 			}
 			return {p_c:possible_chips,p_f:possible_felder,p_m:possible_moves}
 		}
-		genius = function (depth, player, min, max, chip_1_temp=JSON.parse(JSON.stringify(chip_list_1)), chip_2_temp=JSON.parse(JSON.stringify(chip_list_2)), feld_list_temp=JSON.parse(JSON.stringify(feld_list)), state_temp=state){
+		genius = function (depth, player, min, max, chip_1_temp=JSON.parse(JSON.stringify(chip_list_1)), chip_2_temp=JSON.parse(JSON.stringify(chip_list_2)), feld_list_temp=JSON.parse(JSON.stringify(feld_list)), state_temp=state){ // Funktion die rekursiv alle spielmöglichkeiten durchgeht und bewertet
 			// Liste möglicher Spielzüge durchgehen (abwechselnd) bis schwarz oder weiß gewinnt. (weiß =-1; schwarz = 1).das dann als rückabeobjekt verwerten und minimale Gewinnchance und maximale verlierchance vergleihchen und so besten zug auswählen.
 			// maximale rekursionstiefe erfordert bewertung von zwischenstadium
 			// Für die Spielzüge muss eine Liste der Chips mit angepassten werten übermittelt werden!
