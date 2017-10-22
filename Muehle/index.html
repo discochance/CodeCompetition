@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="de-DE">
+	<head>
+		<title>Code Competition</title>
+		<meta charset="UTF-8"/>
+		<meta name="Sebastian Bach" content="Mühle KI" />
+		<link rel="stylesheet" href="index.css">
+		<script src="jquery.min.js"></script><!-- Das importieren der JQuery Quelldatei aus dem Ordner, falls Sie vorhanden ist -->
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+		<script>window.jQuery || document.write('<script src="http://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js">\x3C/script>')</script> <!-- Das importieren der JQuery Quelldatei von Google falls die lokale nicht existiert -->
+		<script src="jquery-ui.js"></script><!-- Das importieren der JQuery Quelldatei aus dem Ordner, falls Sie vorhanden ist -->
+		<!-- AUTOR: Sebastian Bach
+			Erstellt fuer die CodeCompetition Oktober 2017 Game Of Life von IT-Talents.de
+			Der Code kann grundsaetzlich von allen verwendet werden, Credit ist gerne gesehen.
+			Kontakt: FloatingSystemsDE@gmail.com
+		-->
+		<script type="text/javascript">
+		// ########## VARIABLEN ########## 
+		chip_list_1=[" "] // enthält Liste von chip Instanzen von Spieler 1, der " " zu Beginn sorgt dafür dass der Chip 1 auch den Index 1 hat.
+		chip_list_2=[" "] // enthält Liste von chip Instanzen von Spieler 2.
+		feld_list=[" "] // enthält Liste von feld Instanzen.
+		koord_arr={o: [" ",[" ",1,2,3],[" ",10," ",15],[" ",22,23,24]],m:[" ",[" ",4,5,6],[" ",11," ",14],[" ",19,20,21]],i:[" ",[" ",7,8,9],[" ",12," ",13],[" ",16,17,18]]} // Objekt dass benachbarte Felder auflistet und dabei das Feld in drei Container ([o]uter,[m]iddle, [i]nner) und jeweils 3 Zeilen und 3 Spalten unterteilt. Leere Strings werden dazu benutzt den Index der Array Elemnte an die Richtige stelle zu schieben (s.o.).
+		state=1 // Variable die Spielstatus enthaelt. 1=Phase in der Spieler Ihre chips auf dem Brett verteilen. 2=Phase in der Spieler ganz normal Spielen. 3= Phase in der einer oder beide nur noch drei Steine haben. 4= Spiel zuende
+		drag_origin=0 // Variable die den Ursprungsort eines gezogenen Steins speichert, damit dieser im Fall eines Fehlerhaften Zielortes zurueckgeführt werden kann
+		counter_gen=0 // Variable die die genius aufrufe mitzählt
+		
+		// ########## KLASSEN ########## 
+		// Klasse für alle Chips
+		chip = function(id,player){
+			this.id=id; // Chip-id, entspricht index in der jeweiligen Chipliste sowie der id des HTML Elements
+			this.player=player; // Variable die den Spieler dem der Chip gehört speichert. 1 = Spieler Schwarz, 2= Spieler weiß
+			this.free=false; // Wird auf true gesetzt wenn nur noch 3 Chips des Spielers im Spiel sind und er Springen darf
+			this.position=0; // id des Feldes auf dem der Stein sitzt. 0= noch nicht gesetzt, 25=gelöscht durch gegner
+			this.muehle=new Array(); // Liste von Chip-Ids die zusammen eine Mühle Spielen, damit bei verschieben eines einzelnen Steines der Mühle diese gelöscht wird
+		}
+		// Klasse für alle Felder
+		feld = function(pos, box, row, col) {
+			this.position=pos; // Die eigene Position bzw Id. Entspricht index in der feld_list und feld Klasse (z.b. feld-1, wenn this.position=1)
+			this.box=box; // Die Box in der sich das Feld befindet. Wert aus "o", "m", "i" fuer die Boxen von aussen nach innen
+			this.row=row; // Reihe in der sich das Feld befindet (innerhalb der box)
+			this.col=col; // Spalte in der sich das Feld befindet (innerhalb der box)
+			this.occupied=false; // Wird auf true gesetzt falls ein Chip auf dem Feld liegt
+			this.chip=0; // Nummer des Chips der auf dem Feld liegt
+			this.owner=0; // Spieler dem der Chip gehört, der auf dem Feld liegt
+			this.neighbors=[]; // Liste der positionen/Ids der benachbarten Felder
+			this.getNeighbors=function(){ // Funktion zum erstellen der Nachbarliste
+				this.neighbors=[];
+				if (this.col != 2 && this.row !=2){ // Wenn es sich um ein Feld an einem der Eckpunkte einer Box handelt, dann...
+					this.neighbors.push(eval("koord_arr."+this.box+"[2]["+this.col+"]")) // .. ist ein Nachbar das Feld, das sich in der selben Spalte und in der Mittleren Zeile befindet...
+					this.neighbors.push(eval("koord_arr."+this.box+"["+this.row+"][2]")) // .. und ein Nachbar das Feld, das sich in der selben zeile und in der Mittleren Spalte befindet.
+				}else if (this.col == 2){ // Falls es sich um ein Feld handelt das in der Mittleren Spalte ist
+					this.neighbors.push(eval("koord_arr."+this.box+"["+this.row+"][1]")) // Hat es auf jeden Fall die beiden Nachbarn die sich an den beiden Eckpunkten in der selben Zeile befinden
+					this.neighbors.push(eval("koord_arr."+this.box+"["+this.row+"][3]"))
+					if (this.box == "o" || this.box == "i"){	 // Falls es in der innersten oder aeussersten box ist, kommt noch das mittlere feld der Mittleren Box dazu,..
+						this.neighbors.push(eval("koord_arr.m["+this.row+"]["+this.col+"]")) // .. dass sich in der selben Zeile und Spalte befindet, nur in der mittleren Box
+					}else{ // Falls das Feld dagegen aus der Mittleren Box kommt hat es mehr nachbarn:
+						this.neighbors.push(eval("koord_arr.o["+this.row+"]["+this.col+"]")) // nämlich das Feld aus der äußeren Box, ...
+						this.neighbors.push(eval("koord_arr.i["+this.row+"]["+this.col+"]")) // ... sowie das aus der inneren.
+					}
+				}else if (this.row == 2){ // Wenn es sich dagegen um ein Feld handelt das aus der Mittleren Reihe ist,..
+					this.neighbors.push(eval("koord_arr."+this.box+"[1]["+this.col+"]")) // ...hat es auf jeden Fall die beiden Eckpunkte in der selben Box und Spalte als Nachbarn,...
+					this.neighbors.push(eval("koord_arr."+this.box+"[3]["+this.col+"]")) // ... die sich in Reihen 1 und 3 befinden
+					if (this.box == "o" || this.box == "i"){ // Wie oben hat es im Falle dass es aus der innersten/äußersten Box ist...
+						this.neighbors.push(eval("koord_arr.m["+this.row+"]["+this.col+"]")) // ... den Nachbarn in der mittleren Box mit den gleichen Koordinaten
+					}else{ // Und wie oben hat es falls es aus der mittleren box hat die Nachbarn,...
+						this.neighbors.push(eval("koord_arr.o["+this.row+"]["+this.col+"]")) // ... mit den selben Koordinaten aus der äußeren ...
+						this.neighbors.push(eval("koord_arr.i["+this.row+"]["+this.col+"]")) // ... und der inneren Box
+					}
+				}
+			};
+			this.getNeighbors();
+		}
+		// ########## FUNKTIONEN ########## 
+		// Funktion die zum erstmaligen Initialisieren sowie zum zuirücksetzen des Feldes benutzt wird
+		function init(){
+			chip_list_1=[" "]
+			chip_list_2=[" "]
+			feld_list=[" "] 
+			state=1
+			drag_origin=0
+			muehleZug=0 // Für die Variablen siehe Oben
+			
+			$(".chip").remove() // Entfernt die HTML Elemente welche die Chips darstellen
+			for (i=1;i<=9;i++){ // Fügt 9 Chips pro Spieler in das passende HTML Element und in die passende Liste ein
+				chip_list_1.push(new chip(i,1))
+				$("#player-1").append('<div class="p-1 chip chip-'+i+' unset" id="'+i+'"></div>')
+				chip_list_2.push(new chip(i,2))
+				$("#player-2").append('<div class="p-2 chip chip-'+i+' unset" id="'+i+'"></div>')
+			}
+			
+			$("#container .feld").remove() // Entfernt alle HTML Elemente die Felder darstellen, falls welche vorhanden sind
+			out=[1,2,3,10,15,22,23,24] // Liste an Feldern in der äußersten Box
+			mit=[4,5,6,11,14,19,20,21] // Liste an Feldern in der mittleren Box
+			inn=[7,8,9,12,13,16,17,18] // Liste an Feldern in der inneren Box
+			r=1	// Laufvariablen die jeweils der Reihe bzw der Spalte des Elements entsprechen
+			c=1
+			for (i in out){
+				$("#container #outer").append("<div class='feld feld-"+out[i]+" feld-c-"+c+" feld-r-"+r+"'></div>") // Füge ein HTML Element in den äußersten Container ein für jedes Feld aus der äußersten Box. Setze Spalte, Reihe und Id als Klasse
+				if (c == 3){c=0;if(r==3){r=0};r++;};c++;if (r==2 && c==2){c++}; // Falls die die Spalte =3 ist, setze sie auf 0, wenn auch die reihe auf 3 ist nulle diese ebenfalls, ansonsten addiere 1 zur reihe. Dann addiere 1 zur Spalte. Wenn jetzt spalte UND Reihe auf 2 stehen, addiere noch eins zur spalte, da kein mittleres Feld existiert.
+			}
+			for (i in mit){
+				$("#container #middle").append("<div class='feld feld-"+mit[i]+" feld-c-"+c+" feld-r-"+r+"'></div>") // Füge ein HTML Element in den mittleren Container ein für jedes Feld aus der mittleren Box. Setze Spalte, Reihe und Id als Klasse
+				if (c == 3){c=0;if(r==3){r=0};r++;};c++;if (r==2 && c==2){c++}; // s.o.
+			}
+			for (i in inn){
+				$("#container #inner").append("<div class='feld feld-"+inn[i]+" feld-c-"+c+" feld-r-"+r+"'></div>") // Füge ein HTML Element in den innersten Container ein für jedes Feld aus der innersten Box. Setze Spalte, Reihe und Id als Klasse
+				if (c == 3){c=0;if(r==3){r=0};r++;};c++;if (r==2 && c==2){c++}; // s.o.
+			}
+			
+			for (i=1;i<25;i++){ // Für alle 25 Felder:
+				if (out.indexOf(i)!=-1){ // Falls es in der äußersten Box ist,
+					if ([0,3,5].indexOf(out.indexOf(i))!=-1){c=1}else if ([1,6].indexOf(out.indexOf(i))!=-1){c=2}else{c=3} // Setze anhand des Indexes den die ID in der Liste der Elemente der Box hat die Spalte richtig, da die Indexe sortiert nach Reihe und Spalte sind
+					if (out.indexOf(i)<3){r=1}else if (out.indexOf(i)<5){r=2}else{r=3} // Setze wie die Spalte auch die Zeile
+					feld_list.push(new feld(out[out.indexOf(i)],"o",r,c)) // Füge eine neue Instanz der Felder Klasse in die Liste ein. Zum Initialisieren benötigt sie ihre Id, Box, Reihe und spalte 
+				}
+				if (mit.indexOf(i)!=-1){ // Falls es in der mittleren Box ist, tue das gleiche wie oben nur mit der mittleren Box.
+					if ([0,3,5].indexOf(mit.indexOf(i))!=-1){c=1}else if ([1,6].indexOf(mit.indexOf(i))!=-1){c=2}else{c=3}
+					if (mit.indexOf(i)<3){r=1}else if (mit.indexOf(i)<5){r=2}else{r=3}
+					feld_list.push(new feld(mit[mit.indexOf(i)],"m",r,c))
+				}
+				if (inn.indexOf(i)!=-1){ // Falls es in der inneren Box ist, tue das gleiche wie oben nur mit der inneren Box.
+					if ([0,3,5].indexOf(inn.indexOf(i))!=-1){c=1}else if ([1,6].indexOf(inn.indexOf(i))!=-1){c=2}else{c=3}
+					if (inn.indexOf(i)<3){r=1}else if (inn.indexOf(i)<5){r=2}else{r=3}
+					feld_list.push(new feld(inn[inn.indexOf(i)],"i",r,c))
+				}
+			}
+			
+			// Initialisiere Alle Chips des weißen Spielers als Draggable Elemente (mit JQuery UI). Die Funktion unter drag Speichert den Drag Ursprung in drag_origin damit dass Element notfalls zurückgeführt werden kann
+			$(".p-2").draggable({containment: "#body", revert: "invalid", snap: ".feld", snapMode: "inner",snapTolerance: 25, drag: function (e,ui){drag_origin=getChip(ui.helper[0]).position}});
+			// Und alle Felder als Droppable Elemente
+			$(".feld").droppable({
+				accept: acceptC, // Funktion die entscheidet welche Elemente auf dem aktuellen Feld landen dürfen
+				greedy:true,
+				tolerance: "intersect",
+				drop: function( event, ui ){ // Wenn ein Chip abgelegt wurde,
+					getChip(ui.draggable[0]).position=getFeld(this).position; // Wird die Position neu gespeichert
+					getFeld(this).occupied=true; // Das aktuelle Feld als besetzt mariert
+					getFeld(this).owner=2; // und der Besitzer des Chips auf Spieler 2 gesetzt
+					getFeld(this).chip=getChip(ui.draggable[0]).id; // Weiterhin wird die Chip Id gespeichert.
+					$(this).droppable('option', 'accept', ui.draggable); // Das Feld akzeptiert ab jetzt nur noch das aktuell darauf liegende Element.
+					if (state == 1){$(ui.draggable).draggable('disable');} // Und falls wir uns Im Spielmodus 1 befinden kann der Chip vorerst nicht mehr entfernt werden
+					$("#z-counter").text(parseInt($("#z-counter").text())+1) // Zähle 1 zum Zug-counter hinzu
+					if (checkMuehle(getChip(ui.draggable[0]).id,2) && drag_origin!=parseInt($(this)[0].classList[1].split("-")[1])){ // Falls der Chip bewegt wurde und eine Mühle entstanden ist,...
+						Muehle(); // Rufe die Funktion auf die es dem Spieler erlaubt einen gegnerischen Chip zu löschen
+						checkChangeState(); // Und teste ob sich der Spielmodus geändert hat (hat der gegnerische Spieler z.b. verloren?)
+					}else if (drag_origin!=parseInt($(this)[0].classList[1].split("-")[1])){ // Falls keine Mühle entstand darf der Computer ziehen:
+						move();
+					}
+					checkChangeState(); // Zum Schluss nochmal prüfen ob sich der Spielmodus geändert hat.
+				},
+				out: function(event, ui){ // Wenn ein Chip ein Feld verlässt,...
+					$(this).droppable('option', 'accept', acceptC); //.. akzeptiert dieses Feld wieder jeden Chip den es laut funktion akzeptieren darf
+					getFeld(this).occupied=false; // und ist nicht mehr besetzt. 
+				}
+			});
+		}
+		
+		function getChip(target){ // gibt die dem HTML Ziel zugehörige Chip-Instanz zurück
+			if (target.classList[0]=="p-1") {
+				return chip_list_1[parseInt(target.id)]
+			}else if (target.classList[0]=="p-2") {
+				return chip_list_2[parseInt(target.id)]
+			}
+		}
+		function getFeld(target){ // gibt die dem HTML Ziel zugehörige Feld-Instanz zurück
+			return feld_list[parseInt($(target)[0].classList[1].split("-")[1])]
+		}
+
+		function countChips(pos, player) { // Funktion, die Zählt wieviele Chips des Spielers/ der beiden Spieler auf der gegebenen Position sind
+			times=0
+			for (i=1;i<=9;i++){
+				if (player == 1 || player == 0){
+					if (chip_list_1[i].position==pos){times++}
+				}if (player == 2 || player == 0){
+					if (chip_list_2[i].position==pos){times++}
+				}
+			}
+			return times
+		}
+		function checkChangeState() { // Funktion die überprüft ob sich der Spielmodus geändert hat.
+			if (countChips(25,1)>6 || countChips(25,2)>6){
+				state=4;
+				$(".p-2").addClass("nonmove");
+				alert("Zuende! "+(countChips(25,1)>6 ? "Weiß" : "Schwarz")+" hat gewonnen!");
+				$("#p-"+(countChips(25,1)>6 ? "2" : "1")+"-counter").text(parseInt($("#p-"+(countChips(25,1)>6 ? "2" : "1")+"-counter").text())+1)
+				$("#reset").show()
+				$("#z-counter").hide()
+			}else if (countChips(25,2)>5 && state!=1){
+				state=3
+				for (i=1;i<=9;i++){
+					chip_list_2[i].free=true
+				}
+				console.log("2 free")
+			}else if (countChips(25,1)>5 && state!=1){
+				state=3
+				for (i=1;i<=9;i++){
+					chip_list_1[i].free=true
+				}
+				console.log("1 free")
+			}else if (countChips(0,0)<1 && state==1){
+				state=2;
+				$(".p-2").draggable("enable");
+				//$("#player-1-trash, #player-2-trash").show()
+				//$("#player-1-trash, #player-2-trash").droppable("enable")
+			}else if(parseInt($("#z-counter").text())-muehleZug > 50){
+				state=4;
+				$(".p-2").addClass("nonmove");
+				alert("Unentschieden! Über 50 Spielzüge ohne Mühle!");
+				$("#reset").show()
+				$("#z-counter").hide()
+			}
+		}
+		
+		function move(){
+			//$(".p-2").draggable("disable");
+			if (state!=4){
+				makeMove(getMove())
+			}
+			//$(".p-2").draggable("enable");
+		}
+
+		function getMove(){
+			chip_id=parseInt((Math.random()*10)%19)+1
+			fld=[]
+			if (state == 1){
+				for (i=1;i<=9;i++){
+					if (chip_list_1[i].position==0){
+						chip_id=i;
+					}
+				}
+				for (i=1;i<25;i++){
+					if(!feld_list[i].occupied){
+						fld.push(i)
+					}
+				}
+				feld_id="feld-"+fld[parseInt((Math.random()*10)%fld.length)]
+			}else if (state==2){
+				moves=[]
+				for (i=1;i<=9;i++){
+					if (parseInt(chip_list_1[i].position)<25 && parseInt(chip_list_1[i].position)>0){
+						f=feld_list[parseInt(chip_list_1[i].position)].neighbors;
+						res=[]
+						console.log("f.length:"+f.length)
+						for (a=0;a<f.length;a++){
+							if (!feld_list[f[a]].occupied){
+								res.push(f[a])
+							}
+						}
+						console.log("res.length:"+res.length)
+						for (b=0;b<res.length;b++){
+							moves.push({chip_id:i,feld_id:"feld-"+res[b]})
+						}
+					}
+				}
+				if (moves.length<1){
+					console.log("no moves")
+					return false
+				}
+				rnd=parseInt((Math.random()*100)%moves.length)
+				console.log(moves,rnd)
+				return moves[rnd]
+			}else if (state==3){
+				if (chip_list_1[1].free){
+				
+				}
+				if (chip_list_2[1].free){
+				
+				}
+				res=[]
+				for (i=1;i<25;i++){
+					if (!feld_list[i].occupied){
+						res.push(i)
+					}
+				}
+				chips=[]
+				for (i=1;i<=9;i++){
+					if (chip_list_1[i].position!=25){
+						chips.push(i)
+					}
+				}
+				rnd=parseInt((Math.random()*100)%res.length)
+				rnd2=parseInt((Math.random()*100)%chips.length)
+				feld_id="feld-"+res[rnd]
+				chip_id=chips[rnd2]
+			}
+			// console.log("c:"+chip_id+",f:"+feld_id)
+			return {chip_id:chip_id,feld_id:feld_id}
+		}
+		
+		
+		function possible(chip_1_temp,chip_2_temp,feld_list_temp,player, state_temp){
+			possible_chips=[]
+			possible_felder=[]
+			possible_moves=[]
+			if (player == 1){
+				for (a=1;a<chip_1_temp.length;a++){
+					if ((chip_1_temp[a].position == 0 && state_temp == 1) || (chip_1_temp[a].position<25 && state_temp != 1)) {
+						possible_chips.push(a)
+					}
+				}
+			}else if (player == 2){
+				for (a=1;a<chip_2_temp.length;a++){
+					if ((chip_2_temp[a].position == 0 && state_temp == 1) || (chip_2_temp[a].position<25 && state_temp != 1)){
+						possible_chips.push(a)
+					}
+				}
+			}
+			for (b=1;b<25;b++){
+				if (!feld_list_temp[b].occupied && (state_temp==1 || state_temp==3) ){
+					possible_felder.push(b)
+					for (c=0;c<possible_chips.length;c++){
+						possible_moves.push({chip_id:possible_chips[c],feld_id :b})
+					}
+				}else if (state_temp!=1 && feld_list_temp[b].occupied && feld_list_temp[b].owner == player){
+					for (c=0;c<feld_list_temp[b].neighbors.length;c++){
+						if (!feld_list_temp[feld_list_temp[b].neighbors[c]].occupied){
+							possible_felder.push(feld_list_temp[b].neighbors[c]) 
+							possible_moves.push({feld_id: feld_list_temp[b].neighbors[c],chip_id : feld_list_temp[b].chip }) 
+						}
+					}
+				}
+			}
+			return {p_c:possible_chips,p_f:possible_felder,p_m:possible_moves}
+		}
+		genius = function (depth, player, min, max, chip_1_temp=JSON.parse(JSON.stringify(chip_list_1)), chip_2_temp=JSON.parse(JSON.stringify(chip_list_2)), feld_list_temp=JSON.parse(JSON.stringify(feld_list)), state_temp=state){
+			// Liste möglicher Spielzüge durchgehen (abwechselnd) bis schwarz oder weiß gewinnt. (weiß =-1; schwarz = 1).das dann als rückabeobjekt verwerten und minimale Gewinnchance und maximale verlierchance vergleihchen und so besten zug auswählen.
+			// maximale rekursionstiefe erfordert bewertung von zwischenstadium
+			// Für die Spielzüge muss eine Liste der Chips mit angepassten werten übermittelt werden!
+			counter_gen++
+			//k console.log("call",counter_gen,"depth:",depth)
+			// //k console.log(chip_list_1)
+			
+			this.countChipsLocal = function (pos,pla){
+				times=0
+				for (i=1;i<=9;i++){
+					if (pla == 1 || pla == 0){
+						if (chip_1_temp[i].position==pos){times++}
+					}if (pla == 2 || pla == 0){
+						if (chip_2_temp[i].position==pos){times++}
+					}
+				}
+			};
+			
+			//zuerst testen ob spiel zuende ist/ tiefste rekursionstiefe erreicht ist
+			if (this.countChipsLocal(25,1)>6){
+				// Spieler weiß hat gewonnen
+				//k console.log("weiß gewinnt")
+				return 	-100
+			}else if (this.countChipsLocal(25,2)>6){
+				// Spieler schwarz hat gewonnen
+				//k console.log("schwarz gewinnt")
+				return 	100
+			}if (depth == 0 ){
+				// nicht tiefer gehen (bewerten!!)
+				//k console.log("ende",this.countChipsLocal(25,2)>this.countChipsLocal(25,1) ? 1:-1)
+				// return this.countChipsLocal(25,2)>this.countChipsLocal(25,1) ? 1:-1
+				return this.countChipsLocal(25,2)>this.countChipsLocal(25,1) ? 1:-1
+			}
+			
+			this.checkChangeStateLocal = function (s){
+				if (this.countChipsLocal(25,1)>6 || this.countChipsLocal(25,2)>6){
+					s=4;
+				}else if (this.countChipsLocal(25,2)>5 && s!=1){
+					s=3
+				}else if (this.countChipsLocal(25,1)>5 && s!=1){
+					s=3
+				}else if (this.countChipsLocal(0,0)<1 && s==1){
+					s=2;
+				}
+				return s
+			};
+			this.deleteChipLocal = function (player,f_l_t, c_1_t, c_2_t){
+				chips=[]
+				for (z=1;z<=9;z++){
+					if (!checkMuehle(z, player, f_l_t, c_1_t, c_2_t) && ((c_2_t[z].position != 0 && player==2 && c_2_t[z].position != 25)||(c_1_t[z].position != 0 && player==1 && c_1_t[z].position != 25))){
+						chips.push(z)
+					}
+				}
+				if (chips.length == 0){
+					for (z=1;z<=9;z++){
+						if ((c_2_t[z].position != 0 && c_2_t[z].position != 25 && player==2)||(c_1_t[z].position != 0 && c_1_t[z].position != 25 && player==1)){
+							chips.push(z)
+						}
+					}
+				}
+				rnd=parseInt((Math.random()*100)%chips.length)
+				if (player == 2){
+					// console.log("delete:",chips[rnd],"auf Feld",c_2_t[chips[rnd]].position)
+					f_l_t[c_2_t[chips[rnd]].position].occupied=false;
+					c_2_t[chips[rnd]].position=25;
+				}else{
+					f_l_t[c_1_t[chips[rnd]].position].occupied=false;
+					c_1_t[chips[rnd]].position=25;
+				}
+			};
+			this.makeMoveLocal = function (mov){
+				c_1_t=JSON.parse(JSON.stringify(chip_1_temp))
+				c_2_t=JSON.parse(JSON.stringify(chip_2_temp))
+				f_l_t=JSON.parse(JSON.stringify(feld_list_temp))
+				s_t=state_temp
+				this.rating=0;
+				//k console.log("called MakeMoveLocal:"+mov.feld_id+";c:"+mov.chip_id)
+				if (c_1_t[mov.chip_id].position!=0){
+					//k console.log("occupied",mov.chip_id,c_1_t[mov.chip_id],f_l_t[c_1_t[mov.chip_id].position])
+					f_l_t[c_1_t[mov.chip_id].position].occupied=false;
+				}
+				c_1_t[mov.chip_id].position=mov.feld_id;
+				f_l_t[mov.feld_id].occupied=true;
+				f_l_t[mov.feld_id].owner=1;
+				f_l_t[mov.feld_id].chip=mov.chip_id;
+				s_t=this.checkChangeStateLocal(s_t)
+				if (checkMuehle(mov.chip_id, player, f_l_t, c_1_t, c_2_t)){
+					//k console.log("deleteChip:",c_1_t,c_2_t,(player%2)+1)
+					this.deleteChipLocal((player%2)+1, f_l_t, c_1_t, c_2_t) // Entferne chip des gegners
+					//k console.log("deleted Chip:",c_1_t,c_2_t)
+					if (player=01){this.rating++}else{this.rating--}
+				}
+				return {chip_1_temp: c_1_t, chip_2_temp: c_2_t, feld_list_temp: f_l_t, state_temp: s_t,rating: this.rating}
+			};
+			
+			
+
+			possObj=possible(chip_1_temp,chip_2_temp,feld_list_temp,player, state_temp)
+			//k console.log(possObj.p_m)
+			genius_results=[]
+			//k console.log("länge:",possObj.p_m.length)
+			for (var z=0;z<possObj.p_m.length;z++){
+				temp=this.makeMoveLocal(possObj.p_m[z])
+				p_t=(player%2)+1
+				call=counter_gen
+				//k console.log("z:",z,"call:",call)
+				g=genius(depth-1, p_t, min, max, temp.chip_1_temp, temp.chip_2_temp, temp.feld_list_temp, temp.state_temp)
+				if (typeof(g)=="number"){
+					genius_results.push(g+temp.rating)
+				}else {
+					genius_results.push(g.val+temp.rating)
+				}
+				//k console.log("z:",z,"call:",call)
+			}
+			if (player==2){
+				val = Math.min.apply(null, genius_results)
+			}else{
+				val = Math.max.apply(null, genius_results)
+			}
+			return {val:val,move:possObj.p_m[genius_results.indexOf(val)]}
+		}
+		
+		function makeMove(mov){
+			console.log(mov)
+			if (chip_list_1[mov.chip_id].position!=0){
+				feld_list[chip_list_1[mov.chip_id].position].occupied=false;
+			}
+			dest=$("."+mov.feld_id).offset()
+			$("#"+mov.chip_id+".p-1").removeClass("unset")
+			$("#"+mov.chip_id+".p-1").css("position", "fixed")
+			$("#"+mov.chip_id+".p-1").animate({
+				top: dest.top-2.5,
+				left: dest.left-2.5
+			});
+			chip_list_1[mov.chip_id].position=mov.feld_id.split("-")[1];
+			feld_list[mov.feld_id.split("-")[1]].occupied=true;
+			feld_list[mov.feld_id.split("-")[1]].owner=1;
+			feld_list[mov.feld_id.split("-")[1]].chip=mov.chip_id;
+			console.log(parseInt(mov.chip_id))
+			console.log(chip_list_1[parseInt(mov.chip_id)])
+			temp=chip_list_1[parseInt(mov.chip_id)].muehle
+			for (y in temp){
+				console.log(temp[y])
+				$(".p-1.chip-"+temp[y]).removeClass("muehle")
+				chip_list_1[parseInt(mov.chip_id)].muehle=[]
+			}
+			if (checkMuehle(parseInt(mov.chip_id),1)){
+				console.log("Mühle!(1)")
+				deleteChip()
+			}
+			checkChangeState();
+			console.log(parseInt($("#z-counter").text())+"züge:"+(parseInt($("#z-counter").text())+1))
+			$("#z-counter").text(parseInt($("#z-counter").text())+1)
+		}
+		function checkMuehle(target_chip_id, target_player, f_l=feld_list, c_l_1=chip_list_1, c_l_2=chip_list_2){
+			muehle1=false;
+			muehle2=false;
+			muehle3=false;
+			muehle4=false;
+			points=[5,11,14,20]
+			for (i in points){
+				if (f_l[points[i]].occupied && f_l[points[i]].owner == target_player){
+					m_count=[]
+					other_count=[]
+					for (a in f_l[points[i]].neighbors){
+						if (f_l[f_l[points[i]].neighbors[a]].box=="m" && f_l[f_l[points[i]].neighbors[a]].occupied && f_l[f_l[points[i]].neighbors[a]].owner==target_player){
+							m_count.push(f_l[points[i]].neighbors[a])
+						}else if(f_l[f_l[points[i]].neighbors[a]].box!="m" && f_l[f_l[points[i]].neighbors[a]].occupied && f_l[f_l[points[i]].neighbors[a]].owner==target_player){
+							other_count.push(f_l[points[i]].neighbors[a])
+						}
+					}
+					if (m_count.length==2 ){
+						for (b=0;b<m_count.length;b++){
+							// if (m_count.indexOf(target_chip_id)!=-1 || (points[i]==c_l_1[target_chip_id].position && target_player==1) || (points[i]==c_l_2[target_chip_id].position && target_player==2) ){
+							if ( (target_player == 1 && (m_count.indexOf(parseInt(c_l_1[target_chip_id].position))!=-1 || points[i]==c_l_1[target_chip_id].position )) || (target_player == 2 && (m_count.indexOf(parseInt(c_l_2[target_chip_id].position))!=-1 || points[i]==c_l_2[target_chip_id].position )) ){
+								muehle1=true
+							}
+						}
+						if (muehle1){
+							chips=[f_l[points[i]].chip]
+							for (x in m_count){
+								chips.push(f_l[m_count[x]].chip)
+							}
+							// console.log(chips)
+							for (c in m_count){
+								$(".p-"+target_player+".chip-"+f_l[m_count[c]].chip).addClass("muehle")
+								$(".p-"+target_player+".chip-"+f_l[points[i]].chip).addClass("muehle")
+								if (target_player == 1){
+									c_l_1[f_l[m_count[c]].chip].muehle=chips
+									c_l_1[f_l[points[i]].chip].muehle=chips
+								}else{
+									c_l_2[f_l[m_count[c]].chip].muehle=chips
+									c_l_2[f_l[points[i]].chip].muehle=chips
+								}
+							}
+						}
+
+					}if (other_count.length==2){
+						for (b=0;b<other_count.length;b++){
+							if ( (target_player == 1 && (other_count.indexOf(parseInt(c_l_1[target_chip_id].position))!=-1 || points[i]==c_l_1[target_chip_id].position )) || (target_player == 2 && (other_count.indexOf(parseInt(c_l_2[target_chip_id].position))!=-1 || points[i]==c_l_2[target_chip_id].position )) ){
+								muehle2=true
+							}
+						}
+						if (muehle2){
+							chips=[f_l[points[i]].chip]
+							for (x in other_count){
+								chips.push(f_l[other_count[x]].chip)
+							}
+							// console.log(chips)
+							for (c in other_count){
+								$(".p-"+target_player+".chip-"+f_l[other_count[c]].chip).addClass("muehle")
+								$(".p-"+target_player+".chip-"+f_l[points[i]].chip).addClass("muehle")
+								if (target_player == 1){
+									// console.log(f_l[other_count[c]].chip)
+									c_l_1[f_l[other_count[c]].chip].muehle=chips
+									c_l_1[f_l[points[i]].chip].muehle=chips
+								}else{
+									c_l_2[f_l[other_count[c]].chip].muehle=chips
+									c_l_2[f_l[points[i]].chip].muehle=chips
+								}
+							}
+						}
+					}
+				}
+			}
+			if (!muehle1 && !muehle2){
+				points=[2,10,15,23]
+				for (i in points){
+					if (f_l[points[i]].occupied && f_l[points[i]].owner == target_player){
+						o_count=[]
+						for (a in f_l[points[i]].neighbors){
+							if (f_l[f_l[points[i]].neighbors[a]].box=="o" && f_l[f_l[points[i]].neighbors[a]].occupied && f_l[f_l[points[i]].neighbors[a]].owner==target_player){
+								o_count.push(f_l[points[i]].neighbors[a])
+							}
+						}
+						if (o_count.length==2 ){
+							for (b=0;b<o_count.length;b++){
+								if ( (target_player == 1 && (o_count.indexOf(parseInt(c_l_1[target_chip_id].position))!=-1 || points[i]==c_l_1[target_chip_id].position )) || (target_player == 2 && (o_count.indexOf(parseInt(c_l_2[target_chip_id].position))!=-1 || points[i]==c_l_2[target_chip_id].position )) ){
+									muehle3=true
+								}
+							}
+							if (muehle3){
+								chips=[f_l[points[i]].chip]
+								for (x in o_count){
+									chips.push(f_l[o_count[x]].chip)
+								}
+								// console.log(chips)
+								for (c in o_count){
+									$(".p-"+target_player+".chip-"+f_l[o_count[c]].chip).addClass("muehle")
+									$(".p-"+target_player+".chip-"+f_l[points[i]].chip).addClass("muehle")
+									if (target_player == 1){
+										c_l_1[f_l[o_count[c]].chip].muehle=chips
+										c_l_1[f_l[points[i]].chip].muehle=chips
+									}else{
+										c_l_2[f_l[o_count[c]].chip].muehle=chips
+										c_l_2[f_l[points[i]].chip].muehle=chips
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if (!muehle1 && !muehle2 && !muehle3){
+				points=[8,12,13,17]
+				for (i in points){
+					if (f_l[points[i]].occupied && f_l[points[i]].owner == target_player){
+						i_count=[]
+						for (a in f_l[points[i]].neighbors){
+							if (f_l[f_l[points[i]].neighbors[a]].box=="i" && f_l[f_l[points[i]].neighbors[a]].occupied && f_l[f_l[points[i]].neighbors[a]].owner==target_player){
+								i_count.push(f_l[points[i]].neighbors[a])
+							}
+						}
+						if (i_count.length==2 ){
+							for (b=0;b<i_count.length;b++){
+								// console.log(c_l_1[target_chip_id].position)
+								if ( (target_player == 1 && (i_count.indexOf(parseInt(c_l_1[target_chip_id].position))!=-1 || points[i]==c_l_1[target_chip_id].position )) || (target_player == 2 && (i_count.indexOf(parseInt(c_l_2[target_chip_id].position))!=-1 || points[i]==c_l_2[target_chip_id].position )) ){
+									muehle4=true
+								}
+							}
+							if (muehle4){
+								chips=[f_l[points[i]].chip]
+								for (x in i_count){
+									chips.push(f_l[i_count[x]].chip)
+								}
+								// console.log(chips)
+								for (c in i_count){
+									$(".p-"+target_player+".chip-"+f_l[i_count[c]].chip).addClass("muehle")
+									$(".p-"+target_player+".chip-"+f_l[points[i]].chip).addClass("muehle")
+
+									if (target_player == 1){
+										// console.log(f_l[i_count[c]].chip)
+										c_l_1[f_l[i_count[c]].chip].muehle=chips
+										c_l_1[f_l[points[i]].chip].muehle=chips
+									}else{
+										c_l_2[f_l[i_count[c]].chip].muehle=chips
+										c_l_2[f_l[points[i]].chip].muehle=chips
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if (muehle1 || muehle2 || muehle3 || muehle4){
+				muehleZug=parseInt($("#z-counter").text())
+			}
+			return (muehle1 || muehle2 || muehle3 || muehle4);
+		}
+		
+		function Muehle(){
+			$(".p-1:not(.unset):not(.deleted):not(.muehle)").addClass("remove");
+			$(".p-2").addClass("nonmove");
+			$(".p-1:not(.unset):not(.deleted)").click(removeChip);
+			
+		}
+		function removeChip(ev){
+			// console.log(ev.currentTarget.id)
+			if (!checkMuehle(ev.currentTarget.id,1) || $(".p-1:not(.unset):not(.deleted):not(.muehle)").length == 0){
+				$("#"+ev.currentTarget.id+".p-1").css("position", "unset")
+				$("#"+ev.currentTarget.id+".p-1").addClass("deleted")
+				$(".p-1").off()
+				feld_list[chip_list_1[ev.currentTarget.id].position].occupied=false;
+				chip_list_1[ev.currentTarget.id].position=25
+				$(".p-1").removeClass("remove");
+				$(".p-2").removeClass("nonmove");
+				checkChangeState()
+				move();
+			}
+		}
+		function deleteChip(){
+			chips=[]
+			for (z=1;z<=9;z++){
+				if (!checkMuehle(z,2) && chip_list_2[z].position != 0 && chip_list_2[z].position != 25){
+					chips.push(z)
+				}
+			}
+			if (chips.length == 0){
+				for (z=1;z<=9;z++){
+					if (chip_list_2[z].position != 0 && chip_list_2[z].position != 25){
+						chips.push(z)
+					}
+				}
+			}
+			rnd=parseInt((Math.random()*100)%chips.length)
+			feld_list[chip_list_2[chips[rnd]].position].occupied=false;
+			$(".feld-"+chip_list_2[chips[rnd]].position).droppable('option', 'accept', acceptC);
+			chip_list_2[chips[rnd]].position=25;
+			$(".p-2.chip-"+chips[rnd]).css("position", "unset")
+			$(".p-2.chip-"+chips[rnd]).addClass("deleted")
+		}
+		
+		
+		function acceptC(e){
+					if (getFeld(this).occupied){return false;}
+					if (state==1){
+						return true;
+					}
+					if (state!=1 && drag_origin > 0){
+						// console.log("----------------")
+						// console.log("this.id:"+parseInt($(this)[0].classList[1].split("-")[1])+";List:"+feld_list[drag_origin].neighbors)
+						if (feld_list[drag_origin].neighbors.indexOf(parseInt($(this)[0].classList[1].split("-")[1]))!=-1){
+							return true
+						}
+					}if (state==3){
+						// console.log(e[0].classList[0])
+						if (chip_list_2[1].free && e[0].classList[0]=="p-2"){
+							return true
+						}
+						if (chip_list_1[1].free && e[0].classList[0]=="p-1"){
+							return true
+						}
+					}
+				}
+		
+		// ########## MAIN ##########
+		// Bei abgeschlossenem Laden der Seite alle anderen Trigger initialisieren:
+		$(document).ready(function(){
+			init();
+			// $(".p-1").draggable({containment: "#body", revert: "invalid", snap: ".feld", snapMode: "inner",snapTolerance: 25});
+			// $(".p-1").draggable("disable")
+			/*$("#player-1-trash").droppable({
+				accept:".p-2",
+				greedy:true,
+				tolerance: "intersect",
+				drop: function( event, ui ){
+					getChip(ui.draggable[0]).position=25;
+					$(ui.draggable).draggable('disable');
+					$(ui.draggable).css("position", "unset");
+					checkChangeState();
+				}
+			});*/
+			$("#player-2-trash").droppable({
+				accept:".p-1",
+				greedy:true,
+				tolerance: "intersect",
+				drop: function( event, ui ){
+					getChip(ui.draggable[0]).position=25;
+					$(ui.draggable).draggable('disable');
+					$(ui.draggable).css("position", "unset");
+					checkChangeState();
+				}
+			});
+			// $("#player-1-trash").droppable("disable")
+			// $("#player-2-trash").droppable("disable")
+			$("#reset").click(function() {
+				init();
+				$(".chip").css({position: "relative",left:"0px",top:"0px"}).removeClass("remove").removeClass("nonmove").removeClass("deleted").removeClass("muehle")
+				$("#z-counter").text("0")
+				$("#z-counter").show()
+				$("#reset").hide()
+			})
+		});
+		</script>
+	</head>
+	<body>
+		<div id="header"> <!-- Region die am Kopf des Dokumentes fest steht -->
+			<div id="p-1-counter">0</div>
+			<div id="reset">neu Beginnen</div><!-- Button der alle zellen tötet -->
+			<div id="p-2-counter">0</div>
+			<div id="z-counter">0</div>
+		</div>
+		<div id="body"> <!-- Region die den Container der Tabelle, sowie die Tabelle enthaelt -->
+			<div id="player-1"></div><!-- <div id="player-1-trash"></div> -->
+			<div id="container"> <!-- Region die die maximal Maße der Tabelle bestimmt -->
+				<div id="outer">
+					<div id="horiz"></div>
+					<div id="vert"></div>
+					<div id="middle">
+						<div id="inner">
+						</div>
+					</div>
+				</div>
+				<div class="feld" id="1"></div>
+			</div>
+			<div id="player-2"></div><div id="player-2-trash"></div>
+		</div>
+		<div id="nomove"></div>
+	</body>
+</html>
